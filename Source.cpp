@@ -1,3 +1,6 @@
+// Muhammad Jawad Ali       23i-3024
+
+#pragma once
 #include <iostream>
 #include <fstream>
 #include <cmath>
@@ -22,11 +25,12 @@ void removeStopWords();
 int getSizeOfCharArray(char*);
 int getSizeOfFile(const char*);
 int convertCharArrayToInt(char*);
-//void fillingStopWords();
-//void generateFrequencies(char**& , int& , int**& );
-//int getFrequency(char* , int );   // -1 if not found
-//void calculateAllCosineSimilarities(double**& , int** );
-//double similarityIn(int , int );
+void fillingStopWords();
+void generateFrequencies(char**&, int&, int**&);
+int getFrequency(char*, int);   // -1 if not found
+void calculateAllCosineSimilarities(double**&, int**);
+double similarityIn(int, int);
+void printAllVariables();
 
 
 //Helping Functions
@@ -103,6 +107,10 @@ public:
 			delete[] pathofDocumentFiles[i];
 		}
 		delete[] pathofDocumentFiles;
+		for (int i = 0; i < numberOfStopWords; i++) {
+			delete[] stopWords[i];
+		}
+		delete[] stopWords;
 	}
 
 };
@@ -130,6 +138,20 @@ public:
 			delete[] documents[i];
 		}
 		delete[] documents;
+		for (int i = 0; i < numberOfDocuments; i++) {
+			for (int j = 0; j < numberofWordsInOneDocument[i]; j++) {
+				delete[] documentWords[i][j];
+			}
+			delete[] documentWords[i];
+		}
+		delete[] documentWords;
+		for (int i = 0; i < numberOfDocuments; i++) {
+			delete[] sizeOfEachWord[i];
+		}
+		delete[] sizeOfEachWord;
+		delete[] numberofWordsInOneDocument;
+		delete[] documentSize;
+
 	}
 };
 Document documentObj;
@@ -210,6 +232,7 @@ void readInput(const char* pathofInputFile) {
 		cout << "No file opened" << endl;
 		return;
 	}
+
 	file.getline(readInputFileObj.stopWordsLine, MAX_LINE_LENGTH);
 	file.getline(readInputFileObj.numberOfDocuments, MAX_LINE_LENGTH);
 	readInputFileObj.numberOfDocumentsInt = convertCharArrayToInt(readInputFileObj.numberOfDocuments);  //Using helping function for converting char* array to int
@@ -229,6 +252,7 @@ void readInput(const char* pathofInputFile) {
 	}
 	file.close();
 	fillingStopWords();
+	convertDocumentsToWords();
 }
 
 int getNumberOfDocument() {
@@ -271,13 +295,17 @@ void removePunctuationMarks() {
 		int newSize = 0;
 		for (int j = 0; j < size; j++) {
 			char ch = documentObj.documents[i][j];
-			if (ch != '.' && ch != '~' && ch != '!' && ch != '@' && ch != '#' && ch != '$' && ch != '%' && ch != '^' && ch != '&' && ch != '*' && ch != '(' && ch != ')' && ch != '_' && ch != '+' && ch != '=' && ch != '"' && ch != ';' && ch != ':' && ch != '/' && ch != '?' && ch != '>' && ch != ',' && ch != '<' && ch != '\n') {
+			if (ch != '.' && ch != '~' && ch != '!' && ch != '@' && ch != '#' && ch != '$' && ch != '%' && ch != '^' && ch != '&' && ch != '*' && ch != '(' && ch != ')' && ch != '_' && ch != '+' && ch != '=' && ch != '"' && ch != ';' && ch != ':' && ch != '/' && ch != '?' && ch != '>' && ch != ',' && ch != '<' && ch != '\n' && ch != '-' && ch != '[' && ch != '{' && ch != '}' && ch != ']' && ch != '`') {
 				if (ch == ' ' && newSize > 0 && array[newSize - 1] == ' ')
 					continue;
 				else
-					array[newSize++] = ch;
+					if (newSize == 0 && ch == ' ')
+						continue;
+				array[newSize++] = ch;
 			}
 		}
+		if (array[newSize - 1] == ' ')
+			while (array[--newSize] != ' ');
 		array[newSize] = '\0';
 		delete[] documentObj.documents[i];
 		documentObj.documents[i] = array;
@@ -325,18 +353,17 @@ void removeStopWords() {
 						j--;
 					}
 				}
-
 			}
-
 		}
 	}
+
 	//create new documents
 	for (int i = 0; i < n; i++) {
 		int size = 0;
 		for (int j = 0; j < documentObj.numberofWordsInOneDocument[i]; j++) {
 			size += documentObj.sizeOfEachWord[i][j];
 		}
-		char* array = new char[size + documentObj.numberofWordsInOneDocument[i]];
+		char* array = new char[size + documentObj.numberofWordsInOneDocument[i] + 1];
 		int index = 0;
 		for (int j = 0; j < documentObj.numberofWordsInOneDocument[i]; j++) {
 			for (int k = 0; k < documentObj.sizeOfEachWord[i][j]; k++) {
@@ -476,7 +503,7 @@ int getFrequency(char* word, int documentNum) { // -1 if not found
 
 void calculateAllCosineSimilarities(double**& similarities, int** documentFrequency) {
 	int n = getNumberOfDocument();
-	similarities = new double*[n];
+	similarities = new double* [n];
 	for (int i = 0; i < n; i++) {
 		similarities[i] = new double[n];
 	}
@@ -501,11 +528,11 @@ void calculateAllCosineSimilarities(double**& similarities, int** documentFreque
 				mag1 = sqrt(mag1);
 				mag2 = sqrt(mag2);
 
-				ans = round((sum*10000) / (mag1 * mag2));
+				ans = round((sum * 10000) / (mag1 * mag2));
 				ans /= 100;
 				similarities[r][c] = ans;
 				similarities[c][r] = ans;
-				
+
 				Similarities[r][c] = ans;
 				Similarities[c][r] = ans;
 			}
@@ -522,49 +549,29 @@ double similarityIn(int doucmentNum1, int documentNum2) {
 	return Similarities[doucmentNum1 - 1][documentNum2 - 1];
 }
 
-int main() {
-	readInput("input1.txt");
-	removePunctuationMarks();
-	convertUpperToLowerCase();
-	removeStopWords();
 
-	cout << getText(1) << "///" << endl;
-
-	char** uniqueWords;
-	int uniqueCount;
-	int** documentFrequency;
-	
-	generateFrequencies(uniqueWords, uniqueCount, documentFrequency);
-
-	for (int i = 0; i < documentObj.numberOfDocuments; i++) {
-		cout << documentObj.documents[i] << endl;
-	}
-
-	cout << "Document Frequency: " << endl;
-	
-	for (int j = 0; j < uniqueCount; j++) {
-		cout << uniqueWords[j] << ": ";
-		for (int i = 0; i < documentObj.numberOfDocuments; i++) {
-			 cout << documentFrequency[i][j] << " ";
-		}
-		cout << endl;
-	}
-
-	char name1[] = "movies";
-	char name2[] = "football";
-	char name3[] = "mary";
-	/*EXPECT_EQ(getFrequency(name1, 1), 2);
-	EXPECT_EQ(getFrequency(name2, 1), 0);
-	EXPECT_EQ(getFrequency(name3, 2), 1);*/
-
-	cout << getFrequency(name1, 1) << endl;
-	cout << getFrequency(name2, 1) << endl;
-	cout << getFrequency(name3, 2) << endl;
-
-
-
-	calculateAllCosineSimilarities(Similarities, DocumentFrequency);
-
-
-	return 0;
-}
+//int main() {
+//	char** uniqueWords = NULL;
+//	int uniqueCount = 0;
+//	int** documentFrequency = NULL;
+//	readInput("input16.txt");
+//	removePunctuationMarks();
+//	convertUpperToLowerCase();
+//	removeStopWords();
+//	generateFrequencies(uniqueWords, uniqueCount, documentFrequency);
+//	calculateAllCosineSimilarities(Similarities, DocumentFrequency);
+//	printAllVariables();
+//
+//	//print all similarities
+//	cout << "Similarities: " << endl;
+//	for (int i = 0; i < getNumberOfDocument(); i++) {
+//		for (int j = 0; j < getNumberOfDocument(); j++) {
+//			cout << similarityIn(i + 1, j + 1) << "\t";
+//		}
+//		cout << endl;
+//	}
+//
+//
+//
+//	return 0;
+//}

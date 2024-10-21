@@ -34,7 +34,7 @@ This C++ tool detects plagiarism by calculating textual similarity between docum
 With the input:
 - **document1.txt**: "John likes to watch movies. Mary likes movies too."
 - **document2.txt**: "Mary also likes to watch football games."
-Output: Cosine Similarity between document 1 and document 2: 53.94%
+- Output: Cosine Similarity between document 1 and document 2: 53.94%
 
 
 ## How to Run
